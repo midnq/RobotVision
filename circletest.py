@@ -17,6 +17,8 @@ TODO
 カメラと操作の接続（白猫形式か追従形式かを決める)
 発表資料の作成
 カメラ追従について、反応している位置（反応している箇所の中心座標とそれに沿って円を描いた形で表示する
+画面サイズが合っていない?
+
 
 """
 
@@ -28,7 +30,8 @@ TODO
 
 # メインの処理
 # Webカメラ設定
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cap1 = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+#cap2 = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 # ret, frame = cap.read()  # frameは(480,640,3)
 ball_img = cv2.imread("./image_data/ball2.png")
 stadium_img = cv2.imread("./image_data/stadium.png")
@@ -36,6 +39,7 @@ hand_img = cv2.imread("./image_data/hand2.png")
 # Webカメラの画面の大きさにスタジアムを合わせる
 # stadium_img = cv2.resize(stadium_img, (frame.shape[1]*2, frame.shape[0]))
 stadium_img = cv2.resize(stadium_img, (480*2, 640))
+
 # ボールの高さ、幅の[半分](半分だから注意！！)
 # (注意!)今回ボールの大きさが H:198、W:200と両方偶数のためこれで良いが、奇数の場合は工夫が必要
 ball_r = ball_img.shape[1] // 2
@@ -64,16 +68,20 @@ stadium = copy.deepcopy(stadium_img)
 # 実行
 pre=[]
 while True:
-    ret, frame = cap.read()  # frameは(480,640,3)
+    ret, frame1 = cap1.read()  # frameは(480,640,3)
+    #ret, frame2 = cap2.read()  # frameは(480,640,3)
+    frame1=frame1[:,::-1]
+    #frame2=frame2[:,::-1]
     k = cv2.waitKey(1)
     if start:
-        cv2.imshow("camera", frame)
+        
         time.sleep(0.001)
-        if ball.goal:
-            ball.start()
-            hand1.start()
-            hand2.start()
+        
+        #ゴールしているかの確認
+        
+            
         """
+        #コマンド操作で動かして確認する場合
         ny = hand1.y
         nx = hand1.x
         
@@ -100,8 +108,11 @@ while True:
             ny = hand1.y + 10
             nx = hand1.x + 10
         """
-        ny, nx = motion_detection(
-            frame, hmin, smin, vmin, hmax, smax, vmax, hand1.y, hand1.x)
+        #画面から位置の推定(player1)
+        ny, nx= motion_detection(
+            frame1, hand1.y, hand1.x,ball_r)
+        
+        #画面外に行くのを防ぐ
         if ny-hand_r < 0+20:
             ny = hand_r+20
         if ny+hand_r >= 640-20:
@@ -110,9 +121,18 @@ while True:
             nx = hand_r+20
         if nx+hand_r >= 480-20:
             nx = 479-hand_r-20
+        
+        #player1を動かす
         hand1.move(ny, nx)
-        """
+        if ball.goal:
+            hand1.start()
+        
+        #player2の位置推定
+        #ny, nx = motion_detection(
+         #   frame2, hand2.y, hand2.x,ball_r)
+
         nx += idx_w
+
         if ny-hand_r < 0+20:
             ny = hand_r+20
         if ny+hand_r >= 640-20:
@@ -123,8 +143,10 @@ while True:
             nx = 959-hand_r-20
         
         hand2.move(ny, nx)
-        """
-        
+        if ball.goal:
+            hand2.start()
+
+        #ballとplayerが重なってたら調整(間に画像を挟む)
         if ball.collision_check(hand1):
             
             bi=np.array([ball.y,ball.x])
@@ -153,7 +175,7 @@ while True:
             pre=[(mi[0],mi[1],ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
             ball.y=mi[0]
             ball.x=mi[1]
-            cv2.imshow("output", stadium)
+            cv2.imshow("stadium", stadium)
             time.sleep(0.001)
 
             
@@ -185,33 +207,29 @@ while True:
             pre=[(mi[0],mi[1],ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
             ball.y=mi[0]
             ball.x=mi[1]
-            cv2.imshow("output", stadium)
+            
+            cv2.imshow("stadium", stadium)
             time.sleep(0.001)
             
+        if ball.goal:
+            ball.start()
+        #ボールを動かす    
         ball.move()
-        """
-        ny, nx = motion_detection(
-            frame, hmin, smin, vmin, hmax, smax, vmax, hand1.y, hand1.x)
-        """
+
         
         
         
         
-        #stadium[:, :] = stadium_img[:, :]
+        #初期画像に戻す処理
         if pre:
             for y,x,r in pre:
                 stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
-        #print((ball.y - ball_h) ,(ball.y + ball_h), (ball.x- ball_w) , (ball.y + ball_w),ball.y,ball.x,ball_h,ball_w)
+        #衝突確認
         hand1.collison_check(ball)
         hand2.collison_check(ball)
-        """
-        stadium[(ball.y - ball_r): (ball.y + ball_r),
-                (ball.x - ball_r): (ball.x + ball_r)] = ball_img
-        stadium[(hand1.y - hand_r): (hand1.y + hand_r),
-                (hand1.x - hand_r): (hand1.x + hand_r)] = hand_img
-        stadium[(hand2.y - hand_r): (hand2.y + hand_r),
-                (hand2.x - hand_r): (hand2.x + hand_r)] = hand_img
-        """
+        
+        
+        #画像に書き込む
         stadium[(ball.y - ball_r): (ball.y + ball_r),
                 (ball.x - ball_r): (ball.x + ball_r)] = np.where(flager,ball_img,stadium[(ball.y - ball_r): (ball.y + ball_r),
                 (ball.x - ball_r): (ball.x + ball_r)])
@@ -227,45 +245,36 @@ while True:
                     
         pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
         
-        cv2.imshow("output", stadium)
+        cv2.imshow("stadium", stadium)
+        cv2.imshow("player1", frame1)
+        #cv2.imshow("player2", frame2)
 
-        """
-        ny, nx = motion_detection(
-            frame, hmin, smin, vmin, hmax, smax, vmax, hand2.y, hand2.x)
-        """
-        
-        """
-        stadium = copy.deepcopy(stadium_img)
-       # print((ball.y - ball_h) ,(ball.y + ball_h), (ball.x- ball_w) , (ball.y + ball_w),ball.y,ball.x,ball_h,ball_w)
-        stadium[(ball.y - ball_r): (ball.y + ball_r),
-                (ball.x - ball_r): (ball.x + ball_r)] = ball_img
-        stadium[(hand1.y - hand_r): (hand1.y + hand_r),
-                (hand1.x - hand_r): (hand1.x + hand_r)] = hand_img
-        stadium[(hand2.y - hand_r): (hand2.y + hand_r),
-                (hand2.x - hand_r): (hand2.x + hand_r)] = hand_img
-        cv2.imshow("output", stadium)
-        """
     else:
-        temp = copy.deepcopy(frame)
-        temp[210, 290:350] = [0, 0, 255]
-        temp[270, 290:350] = [0, 0, 255]
-        temp[210:270, 290] = [0, 0, 255]
-        temp[210:270, 350] = [0, 0, 255]
-        cv2.imshow("camera", temp)
-    if k == ord('r'):
+        #スタート前の処理
+        for i in range(-ball_r,ball_r+1):
+            for j in range(-ball_r,ball_r+1):
+                if (ball_r-2)**2<=i**2+j**2<=ball_r**2:
+                    frame1[240+i,320+j]=[0,0,255]
+        #for i in range(-ball_r,ball_r+1):
+         #   for j in range(-ball_r,ball_r+1):
+          #      if i**2+j**2==ball_r**2:
+           #         frame2[240+i,320+j]=[0,0,255]
+
+        cv2.imshow("player1", frame1)
+        #cv2.imshow("player1", frame2)
+    if k == ord('q'):#終了ボタン
         break
 
 
-    if k == ord("s"):
-
+    if k == ord("s"):#スタートボタン
+        """
         # 対象範囲を切り出し
         boxFromX = 290  # 対象範囲開始位置 X座標
         boxFromY = 210  # 対象範囲開始位置 Y座標
         boxToX = 350  # 対象範囲終了位置 X座標
         boxToY = 270  # 対象範囲終了位置 Y座標
         # y:y+h, x:x+w　の順で設定
-        imgBox = frame[boxFromY: boxToY, boxFromX: boxToX]
-
+        imgBox = frame1[boxFromY: boxToY, boxFromX: boxToX]
         # RGB平均値を出力
         # flattenで一次元化しmeanで平均を取得
         imgBoxHsv = cv2.cvtColor(imgBox, cv2.COLOR_BGR2HSV)
@@ -277,8 +286,10 @@ while True:
         hmax = imgBoxHsv.T[0].flatten().max()
         smax = imgBoxHsv.T[1].flatten().max()
         vmax = imgBoxHsv.T[2].flatten().max()
+        """
         start = not (start)
 
 
-cap.release()
+cap1.release()
+#cap2.release()
 cv2.destroyAllWindows()

@@ -30,11 +30,22 @@ def circle_collusion(ball_midy,ball_midx,collusion_y,collusion_x,vecy,vecx):
         ab = b - a
         cos=np.dot(ap, ab)/norm(ab)/norm(ap)
         sin=(1-cos**2)**0.5
-        t=np.array([[cos,-sin],[sin,cos]])
-        inv_t=np.array([[cos,sin],[-sin,cos]])
+        if collusion_y>=ball_midy:
+            t=np.array([[cos,-sin],[sin,cos]])
+            inv_t=np.array([[cos,sin],[-sin,cos]])
+        else:
+            inv_t=np.array([[cos,-sin],[sin,cos]])
+            t=np.array([[cos,sin],[-sin,cos]])
         uv=np.dot(t,vec)
         uv[0]*=-1
         vec=np.dot(inv_t,uv)
+        
+        
+        a = np.array([collusion_y,collusion_x])
+        b = np.array([collusion_y+(collusion_y-ball_midy)*100,collusion_x+(collusion_x-ball_midx)*100])
+        p = np.array([collusion_y-vecy,collusion_x-vecx])
+        neighbor_point=calc_distance_and_neighbor_point(a, b, p)
+        q = neighbor_point+(neighbor_point-p)
         return vec[1],vec[0]
 
     
