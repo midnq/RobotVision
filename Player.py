@@ -8,8 +8,8 @@ class Player:
         self.vec=[0,0]
     def start(self):
         self.vec=[0,0]
-        self.y=self.sty
-        self.x=self.stx
+        #self.y=self.sty
+        #self.x=self.stx
     def move(self,y,x):
         self.vec=[y-self.y,x-self.x]
         self.y = y

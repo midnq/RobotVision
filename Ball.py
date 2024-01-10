@@ -33,8 +33,8 @@ class Ball:
             
         
     def move(self):
-        self.y += self.vec[0]
-        self.x += self.vec[1]
+        self.y += round(self.vec[0])
+        self.x += round(self.vec[1])
         if self.y-self.ball_r < 0+20:
             self.y = self.ball_r+21
             self.vec[0] *= -1
@@ -42,7 +42,7 @@ class Ball:
             self.y = self.h-self.ball_r-21
             self.vec[0] *= -1
         if self.x-self.ball_r < 0+20:
-            if 120<=self.y<=520:
+            if 120+self.ball_r<=self.y<=520-self.ball_r:
                 self.goal=1
                 if self.x - self.ball_r < 0:
                     self.x = self.ball_r+1
@@ -50,7 +50,7 @@ class Ball:
                 self.x = self.ball_r+21
                 self.vec[1] *= -1
         if self.x+self.ball_r >= self.w-20:
-            if 120<=self.y<=520:
+            if 120+self.ball_r<=self.y<=520-self.ball_r:
                 self.goal=2
                 if self.x + self.ball_r >= self.w:
                     self.x = self.w-self.ball_r-1
