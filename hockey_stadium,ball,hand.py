@@ -6,7 +6,7 @@ width_stadium = 1200
 margin_stadium = 20
 thick_line = 5
 color_line = [0,0,0]
-
+"""
 stadium_img = np.zeros((height_stadium,width_stadium,3))
 stadium_img[:,:] = [255,255,255] #白の画像
 
@@ -47,29 +47,39 @@ for j in short_side_x:
     for thickness in range(thick_line):
       stadium_img[i,j+thickness] = color_line
 
-cv2.imwrite('stadium.png', stadium_img)
-
+#cv2.imwrite('stadium.png', stadium_img)
+"""
 #球
 height_ball = 100
 width_ball = 100
-radius_ball = 20
+radius_ball = 50
 color_ball = [0,0,255]
 center_ball = [width_ball//2,height_ball//2]
 
 ball_img = np.zeros((height_ball,width_ball,3))
 ball_img[:,:] = color_ball
+for i in range(100):
+            for j in range(100):
+                if (50-i)**2+(50-j)**2>radius_ball**2:
+                    ball_img[i,j] = [0,0,0]
 
-cv2.imwrite('ball.png', ball_img)
+              
+cv2.imwrite('ball2.png', ball_img)
 
 #持つやつ
 height_hand = 100
 width_hand = 100
-radius_hand = 30
+radius_hand = 50
 color_hand = [0,255,0]
 center_hand = [width_hand//2,height_hand//2]
 
 hand_img = np.zeros((height_hand,width_hand,3))
 hand_img[:,:] = color_hand
 
-cv2.imwrite('hand.png', hand_img)
+for i in range(100):
+            for j in range(100):
+                if (50-i)**2+(50-j)**2>radius_hand**2:
+                    hand_img[i,j] = [0,0,0]
+cv2.imwrite('hand2.png', hand_img)
+
 

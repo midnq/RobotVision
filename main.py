@@ -45,11 +45,12 @@ hand2 = Player(idx_h, 540, hand_r)
 start = True
 stadium = copy.deepcopy(stadium_img)
 # 実行
+pre=[]
 while True:
     # ret, frame = cap.read()  # frameは(480,640,3)
     k = cv2.waitKey(1)
     if start:
-        # time.sleep(0.001)
+        time.sleep(0.003)
         ball.collision_check(hand1)
         ball.collision_check(hand2)
         ball.move()
@@ -60,24 +61,42 @@ while True:
         ny = hand1.y
         nx = hand1.x
         if k == ord('w'):
-            ny = hand1.y - 1
+            ny = hand1.y - 10
         elif k == ord('s'):
-            ny = hand1.y + 1
+            ny = hand1.y + 10
         elif k == ord('a'):
-            nx = hand1.x - 1
+            nx = hand1.x - 10
         elif k == ord('d'):
-            nx = hand1.x + 1
+            nx = hand1.x + 10
+        elif k == ord('q'):
+            ny = hand1.y - 10
+            nx = hand1.x - 10
+        elif k == ord('e'):
+            ny = hand1.y - 10
+            nx = hand1.x + 10
+        
+        elif k == ord('z'):
+            ny = hand1.y + 10
+            nx = hand1.x - 10
+        
+        elif k == ord('c'):
+            ny = hand1.y + 10
+            nx = hand1.x + 10
         if ny-hand_r < 0:
             ny = hand_r
-        if ny+hand_r >= 480:
-            ny = 479-hand_r
+        if ny+hand_r >= 640:
+            ny = 639-hand_r
         if nx-hand_r < 0:
             nx = hand_r
-        if nx+hand_r >= 640:
-            nx = 639-hand_r
+        if nx+hand_r >= 480:
+            nx = 479-hand_r
         hand1.move(ny, nx)
         hand1.collison_check(ball)
-        stadium[:, :] = stadium_img[:, :]
+        
+        #stadium[:, :] = stadium_img[:, :]
+        if pre:
+            for y,x,r in pre:
+                stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
        # print((ball.y - ball_h) ,(ball.y + ball_h), (ball.x- ball_w) , (ball.y + ball_w),ball.y,ball.x,ball_h,ball_w)
         stadium[(ball.y - ball_r): (ball.y + ball_r),
                 (ball.x - ball_r): (ball.x + ball_r)] = ball_img
@@ -85,6 +104,8 @@ while True:
                 (hand1.x - hand_r): (hand1.x + hand_r)] = hand_img
         stadium[(hand2.y - hand_r): (hand2.y + hand_r),
                 (hand2.x - hand_r): (hand2.x + hand_r)] = hand_img
+
+        pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
         cv2.imshow("output", stadium)
         """
         ny, nx = motion_detection(
@@ -93,12 +114,12 @@ while True:
         nx += idx_w
         if ny-hand_r < 0:
             ny = hand_r
-        if ny+hand_r >= 480:
-            ny = 479-hand_r
+        if ny+hand_r >= 640:
+            ny = 640-hand_r
         if nx-hand_r < 0:
             nx = hand_r
-        if nx+hand_r >= 1280:
-            nx = 1279-hand_r
+        if nx+hand_r >= 960:
+            nx = 959-hand_r
 
         hand2.move(ny, nx)
         hand2.collison_check(ball)
@@ -118,7 +139,7 @@ while True:
         temp[210:270, 290] = [0, 0, 255]
         temp[210:270, 350] = [0, 0, 255]
         cv2.imshow("camera", temp)
-    if k == ord('q'):
+    if k == ord('r'):
         break
 
 """
