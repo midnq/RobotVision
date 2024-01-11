@@ -8,6 +8,7 @@ from Ball import Ball
 from Player import Player
 from motion_detection import motion_detection
 from numpy.linalg import norm
+from goal import score
 
 # 中心の画素に類似した色の範囲を取得する関数
 """
@@ -73,6 +74,7 @@ start = False
 stadium = copy.deepcopy(stadium_img)
 # 実行
 pre=[]
+l_score,r_score=0,0
 while True:
     ret, frame1 = cap1.read()  # frameは(480,640,3)
     ret, frame2 = cap2.read()  # frameは(480,640,3)
@@ -83,7 +85,7 @@ while True:
     k = cv2.waitKey(1)
     if start:
         
-        time.sleep(0.001)
+        time.sleep(0.01)
         
         #ゴールしているかの確認
         
@@ -156,17 +158,19 @@ while True:
 
         #ballとplayerが重なってたら調整(間に画像を挟む)
         if ball.collision_check(hand1):
-            
+            if pre:
+                for y,x,r in pre:
+                    stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
+            """
             bi=np.array([ball.y,ball.x])
             hi=np.array([hand1.y,hand1.x])
             vi=bi-hi
             mi=hi+vi/(norm(vi))*(ball_r+hand_r)
             mii=[int(mi[0]),int(mi[1])]
             mi=np.array(mii)
-            if pre:
-                for y,x,r in pre:
-                    stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
+            
             hand1.move(mi[0], mi[1])
+            """
             hand1.collison_check(ball)
             
             stadium[(ball.y - ball_r): (ball.y + ball_r),
@@ -184,22 +188,24 @@ while True:
                     
             pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
             cv2.imshow("stadium", stadium)
-            time.sleep(0.001)
+            time.sleep(0.01)
 
             
         if ball.collision_check(hand2):
-            time.sleep(0.001)
+            if pre:
+                for y,x,r in pre:
+                    stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
+            """
+
             bi=np.array([ball.y,ball.x])
             hi=np.array([hand2.y,hand2.x])
             vi=bi-hi
             mi=hi+vi/(norm(vi))*(ball_r+hand_r)
             mii=[int(mi[0]),int(mi[1])]
             mi=np.array(mii)
-            if pre:
-                for y,x,r in pre:
-                    stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
             
             hand2.move(mi[0], mi[1])
+            """
             hand2.collison_check(ball)
             stadium[(hand2.y - ball_r): (hand2.y + ball_r),
                 (hand2.x- ball_r): (hand2.x + ball_r)] = np.where(flager,ball_img,stadium[(hand2.y - ball_r): (hand2.y + ball_r),
@@ -221,10 +227,13 @@ while True:
             pre=[(hand2.y,hand2.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
             
             cv2.imshow("stadium", stadium)
-            time.sleep(0.001)
-            
+            time.sleep(0.01)
+        score_img,l_score,r_score=score(ball.goal,l_score,r_score) 
         if ball.goal:
+            
             ball.start()
+
+
         #ボールを動かす    
         ball.move()
 
@@ -259,6 +268,8 @@ while True:
         pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
         frame1 = cv2.resize(frame1, (480, 360))
         frame2 = cv2.resize(frame2, (480, 360))
+        cv2.imshow("score",score_img)
+        cv2.moveWindow("score",800,0)
         cv2.imshow("stadium", stadium)
         cv2.moveWindow("stadium", 480, 440)
         cv2.imshow("player1", frame1)
@@ -269,6 +280,7 @@ while True:
     else:
         #スタート前の処理
         #画像に書き込む
+        score_img,l_score,r_score=score(ball.goal,l_score,r_score) 
         stadium[(ball.y - ball_r): (ball.y + ball_r),
                 (ball.x - ball_r): (ball.x + ball_r)] = np.where(flager,ball_img,stadium[(ball.y - ball_r): (ball.y + ball_r),
                 (ball.x - ball_r): (ball.x + ball_r)])
@@ -290,6 +302,8 @@ while True:
                     frame2[240+i,320+j]=[0,0,255]
         frame1 = cv2.resize(frame1, (480, 360))
         frame2 = cv2.resize(frame2, (480, 360))
+        cv2.imshow("score",score_img)
+        cv2.moveWindow("score",800,0)
         cv2.imshow("stadium", stadium)
         cv2.moveWindow("stadium", 480, 440)
         cv2.imshow("player1", frame1)
