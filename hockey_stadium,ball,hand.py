@@ -67,18 +67,18 @@ for i in range(100):
 cv2.imwrite('ball2.png', ball_img)
 
 #持つやつ
-height_hand = 100
-width_hand = 100
-radius_hand = 50
+height_hand = 150
+width_hand = 150
+radius_hand = 75
 color_hand = [0,255,0]
 center_hand = [width_hand//2,height_hand//2]
 
 hand_img = np.zeros((height_hand,width_hand,3))
 hand_img[:,:] = color_hand
 
-for i in range(100):
-            for j in range(100):
-                if (50-i)**2+(50-j)**2>radius_hand**2:
+for i in range(height_hand):
+            for j in range(width_hand):
+                if (height_hand//2-i)**2+(height_hand//2-j)**2>radius_hand**2:
                     hand_img[i,j] = [0,0,0]
 cv2.imwrite('hand2.png', hand_img)
 

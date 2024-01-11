@@ -31,7 +31,7 @@ TODO
 # メインの処理
 # Webカメラ設定
 cap1 = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-#cap2 = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+cap2 = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 # ret, frame = cap.read()  # frameは(480,640,3)
 ball_img = cv2.imread("./image_data/ball2.png")
 stadium_img = cv2.imread("./image_data/stadium.png")
@@ -49,15 +49,21 @@ idx_h = stadium_img.shape[0] // 2
 idx_w = stadium_img.shape[1] // 2
 hand_r = hand_img.shape[1] // 2
 a = [[[True for k in range(3)] for i in range(100)] for j in range(100)]
-for i in range(100):
-    for j in range(100):
+for i in range(ball_img.shape[1]):
+    for j in range(ball_img.shape[1]):
         if ball_img[i,j].sum()==0:
             for k in range(3):
                 a[i][j][k]=False
 
     
 flager=np.array(a)
-
+b = [[[True for k in range(3)] for i in range(hand_img.shape[1])] for j in range(hand_img.shape[1])]
+for i in range(hand_img.shape[1]):
+    for j in range(hand_img.shape[1]):
+        if hand_img[i,j].sum()==0:
+            for k in range(3):
+               b[i][j][k]=False
+flager_hand=np.array(b)
 
 ball = Ball(idx_h, idx_w, stadium_img.shape[0], stadium_img.shape[1], ball_r)
 hand1 = Player(idx_h, 180, hand_r)
@@ -69,9 +75,11 @@ stadium = copy.deepcopy(stadium_img)
 pre=[]
 while True:
     ret, frame1 = cap1.read()  # frameは(480,640,3)
-    #ret, frame2 = cap2.read()  # frameは(480,640,3)
+    ret, frame2 = cap2.read()  # frameは(480,640,3)
     frame1=frame1[:,::-1]
-    #frame2=frame2[:,::-1]
+    frame2=frame2[:,::-1]
+    #frame1 = cv2.resize(frame1, (480, 640))
+    #frame2 = cv2.resize(frame2, (480, 640))
     k = cv2.waitKey(1)
     if start:
         
@@ -110,7 +118,7 @@ while True:
         """
         #画面から位置の推定(player1)
         ny, nx= motion_detection(
-            frame1, hand1.y, hand1.x,ball_r)
+            frame1, hand1.y, hand1.x,hand_r)
         
         #画面外に行くのを防ぐ
         if ny-hand_r < 0+20:
@@ -128,8 +136,8 @@ while True:
             hand1.start()
         
         #player2の位置推定
-        #ny, nx = motion_detection(
-         #   frame2, hand2.y, hand2.x,ball_r)
+        ny, nx = motion_detection(
+            frame2, hand2.y, hand2.x,hand_r)
 
         nx += idx_w
 
@@ -137,8 +145,8 @@ while True:
             ny = hand_r+20
         if ny+hand_r >= 640-20:
             ny = 640-hand_r-20
-        if nx-hand_r < 0+20:
-            nx = hand_r+20
+        if nx-hand_r < 480+20:
+            nx = 480+hand_r+20
         if nx+hand_r >= 960-20:
             nx = 959-hand_r-20
         
@@ -158,23 +166,23 @@ while True:
             if pre:
                 for y,x,r in pre:
                     stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
+            hand1.move(mi[0], mi[1])
+            hand1.collison_check(ball)
             
-            stadium[(mi[0] - ball_r): (mi[0] + ball_r),
-                (mi[1]- ball_r): (mi[1] + ball_r)] = np.where(flager,ball_img,stadium[(mi[0] - ball_r): (mi[0] + ball_r),
-                (mi[1] - ball_r): (mi[1] + ball_r)])
+            stadium[(ball.y - ball_r): (ball.y + ball_r),
+                (ball.x- ball_r): (ball.x + ball_r)] = np.where(flager,ball_img,stadium[(ball.y - ball_r): (ball.y + ball_r),
+                (ball.x - ball_r): (ball.x + ball_r)])
             stadium[(hand1.y - hand_r): (hand1.y + hand_r),
-                    (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
+                    (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
                     (hand1.x - hand_r): (hand1.x + hand_r)])
             stadium[(hand2.y - hand_r): (hand2.y + hand_r),
-                    (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
+                    (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
                     (hand2.x - hand_r): (hand2.x + hand_r)])
 
 
 
                     
-            pre=[(mi[0],mi[1],ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
-            ball.y=mi[0]
-            ball.x=mi[1]
+            pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
             cv2.imshow("stadium", stadium)
             time.sleep(0.001)
 
@@ -190,23 +198,27 @@ while True:
             if pre:
                 for y,x,r in pre:
                     stadium[(y-r):(y+r),(x-r):(x+r)] = stadium_img[(y-r):(y+r),(x-r):(x+r)]
-            stadium[(mi[0] - ball_r): (mi[0] + ball_r),
-                (mi[1]- ball_r): (mi[1] + ball_r)] = np.where(flager,ball_img,stadium[(mi[0] - ball_r): (mi[0] + ball_r),
-                (mi[1] - ball_r): (mi[1] + ball_r)])
+            
+            hand2.move(mi[0], mi[1])
+            hand2.collison_check(ball)
+            stadium[(hand2.y - ball_r): (hand2.y + ball_r),
+                (hand2.x- ball_r): (hand2.x + ball_r)] = np.where(flager,ball_img,stadium[(hand2.y - ball_r): (hand2.y + ball_r),
+                (hand2.x - ball_r): (hand2.x + ball_r)])
+                                                                                      
             stadium[(hand1.y - hand_r): (hand1.y + hand_r),
-                    (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
+                    (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
                     (hand1.x - hand_r): (hand1.x + hand_r)])
+            #print(hand2.y,hand2.x)
             stadium[(hand2.y - hand_r): (hand2.y + hand_r),
-                    (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
+                    (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
                     (hand2.x - hand_r): (hand2.x + hand_r)])
+                                                                                                    
             
 
 
 
                     
-            pre=[(mi[0],mi[1],ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
-            ball.y=mi[0]
-            ball.x=mi[1]
+            pre=[(hand2.y,hand2.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
             
             cv2.imshow("stadium", stadium)
             time.sleep(0.001)
@@ -234,34 +246,56 @@ while True:
                 (ball.x - ball_r): (ball.x + ball_r)] = np.where(flager,ball_img,stadium[(ball.y - ball_r): (ball.y + ball_r),
                 (ball.x - ball_r): (ball.x + ball_r)])
         stadium[(hand1.y - hand_r): (hand1.y + hand_r),
-                (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
+                (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
                 (hand1.x - hand_r): (hand1.x + hand_r)])
+        #print(hand2.y,hand2.x)
         stadium[(hand2.y - hand_r): (hand2.y + hand_r),
-                (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
+                (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
                 (hand2.x - hand_r): (hand2.x + hand_r)])
 
 
 
                     
         pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
-        
+        frame1 = cv2.resize(frame1, (480, 360))
+        frame2 = cv2.resize(frame2, (480, 360))
         cv2.imshow("stadium", stadium)
+        cv2.moveWindow("stadium", 480, 440)
         cv2.imshow("player1", frame1)
-        #cv2.imshow("player2", frame2)
+        cv2.moveWindow("player1", 0, 0)
+        cv2.imshow("player2", frame2)
+        cv2.moveWindow("player2", 1430, 0)
 
     else:
         #スタート前の処理
-        for i in range(-ball_r,ball_r+1):
-            for j in range(-ball_r,ball_r+1):
-                if (ball_r-2)**2<=i**2+j**2<=ball_r**2:
+        #画像に書き込む
+        stadium[(ball.y - ball_r): (ball.y + ball_r),
+                (ball.x - ball_r): (ball.x + ball_r)] = np.where(flager,ball_img,stadium[(ball.y - ball_r): (ball.y + ball_r),
+                (ball.x - ball_r): (ball.x + ball_r)])
+        stadium[(hand1.y - hand_r): (hand1.y + hand_r),
+                (hand1.x - hand_r): (hand1.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand1.y - hand_r): (hand1.y + hand_r),
+                (hand1.x - hand_r): (hand1.x + hand_r)])
+        #print(hand2.y,hand2.x)
+        stadium[(hand2.y - hand_r): (hand2.y + hand_r),
+                (hand2.x - hand_r): (hand2.x + hand_r)] = np.where(flager_hand,hand_img,stadium[(hand2.y - hand_r): (hand2.y + hand_r),
+                (hand2.x - hand_r): (hand2.x + hand_r)])
+        pre=[(ball.y,ball.x,ball_r),(hand1.y,hand1.x,hand_r),(hand2.y,hand2.x,hand_r)]
+        for i in range(-hand_r,hand_r+1):
+            for j in range(-hand_r,hand_r+1):
+                if (hand_r-2)**2<=i**2+j**2<=hand_r**2:
                     frame1[240+i,320+j]=[0,0,255]
-        #for i in range(-ball_r,ball_r+1):
-         #   for j in range(-ball_r,ball_r+1):
-          #      if i**2+j**2==ball_r**2:
-           #         frame2[240+i,320+j]=[0,0,255]
-
+        for i in range(-hand_r,hand_r+1):
+            for j in range(-hand_r,hand_r+1):
+                if (hand_r-2)**2<=i**2+j**2<=hand_r**2:
+                    frame2[240+i,320+j]=[0,0,255]
+        frame1 = cv2.resize(frame1, (480, 360))
+        frame2 = cv2.resize(frame2, (480, 360))
+        cv2.imshow("stadium", stadium)
+        cv2.moveWindow("stadium", 480, 440)
         cv2.imshow("player1", frame1)
-        #cv2.imshow("player1", frame2)
+        cv2.moveWindow("player1", 0, 0)
+        cv2.imshow("player2", frame2)
+        cv2.moveWindow("player2", 1430, 0)
     if k == ord('q'):#終了ボタン
         break
 
@@ -291,5 +325,5 @@ while True:
 
 
 cap1.release()
-#cap2.release()
+cap2.release()
 cv2.destroyAllWindows()

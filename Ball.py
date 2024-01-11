@@ -57,6 +57,10 @@ class Ball:
             else:
                 self.x = self.w-self.ball_r-21
                 self.vec[1] *= -1
+        if self.vec[0]>10:
+            self.vec[0]=10
+        if self.vec[1]>10:
+            self.vec[1]=10
     def collision_check(self, player):
         temp_y = self.y+self.vec[0]
         temp_x = self.x+self.vec[1]

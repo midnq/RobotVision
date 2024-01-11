@@ -70,7 +70,7 @@ def motion_detection(frame,y,x,ball_r):
                     for j in range(-ball_r,ball_r+1):
                         if (ball_r-2)**2<=i**2+j**2<=ball_r**2 and 0<=idx_h+i<480 and 0<=idx_w+j<640:
                             frame[idx_h+i,idx_w+j]=[0,0,255]
-                return idx_h,idx_w
+                return idx_h+80,idx_w
             else:
                 return y,x
                 
